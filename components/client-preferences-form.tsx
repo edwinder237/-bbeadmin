@@ -73,7 +73,9 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
     ref
   ) {
     const router = useRouter();
+    //eslint-disable-next-line
     const [isLoading, setIsLoading] = useState(false);
+    //eslint-disable-next-line
     const [isUpdating, setIsUpdating] = useState(false);
 
     const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL;

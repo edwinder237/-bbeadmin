@@ -12,7 +12,7 @@ export function CodeGenerator({ clientData }: { clientData: ClientData }) {
   const [activeTab, setActiveTab] = useState("booknow")
   const [copied, setCopied] = useState(false)
 
-  const { preferences } = clientData
+
 
   // --- FULL Book Now code (HTML + script) ---
   const bookNowCode = ALL_LISTING_WidgetCode(clientData);
