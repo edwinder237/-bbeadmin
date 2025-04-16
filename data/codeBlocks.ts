@@ -87,7 +87,7 @@ export function ALL_LISTING_WidgetCode(clientData: ClientData): string {
         }
 
         const message = {
-          locationFilter: ,
+          locationFilter: LOCATION_FILTER ,
           ACCESS_KEY: "${clientData.accessKey}",
           INTEGRATION_TYPE: "${preferences.integrationLabel}",
           LODGIFY_WS_URL,
