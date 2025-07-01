@@ -9,9 +9,13 @@ interface ClientData {
   status: string;
 }
 
-const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080';
 
 async function getClients() {
+  if (!SERVER_URL) {
+    throw new Error("SERVER_URL is not configured. Please set NEXT_PUBLIC_SERVER_URL environment variable.");
+  }
+  
   const res = await fetch(`${SERVER_URL}/api/getAdminData`, {
     cache: "no-store",
   });

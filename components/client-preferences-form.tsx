@@ -78,7 +78,7 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
     //eslint-disable-next-line
     const [isUpdating, setIsUpdating] = useState(false);
 
-    const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+    const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080';
 
     // 3.1) Local State
     const [editedClientData, setEditedClientData] = useState<ClientData>({

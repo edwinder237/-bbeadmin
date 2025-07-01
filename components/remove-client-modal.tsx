@@ -23,6 +23,9 @@ interface RemoveClientModalProps {
 export function RemoveClientModal({ isOpen, onClose, selectedClients, onConfirm, mutate }: RemoveClientModalProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080'
+  
   const handleDelete = async () => {
     setIsDeleting(true)
     setError(null)
@@ -30,7 +33,7 @@ export function RemoveClientModal({ isOpen, onClose, selectedClients, onConfirm,
     try {
       // Delete each client sequentially
       for (const clientCuid of selectedClients) {
-        const response = await fetch(`http://localhost:8080/api/getAdminData?clientCuid=${clientCuid}`, {
+        const response = await fetch(`${SERVER_URL}/api/getAdminData?clientCuid=${clientCuid}`, {
           method: 'DELETE',
         });
       

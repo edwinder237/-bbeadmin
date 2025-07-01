@@ -37,6 +37,8 @@ export function AddClientModal({ onClientAdded }: AddClientModalProps) {
   const [selectedIntegration, setSelectedIntegration] = useState<string>()
   const [open, setOpen] = useState(false)
 
+  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080'
+
   const getIntegrationId = (integration: string): IntegrationId => {
     return integration === 'lodgify' ? IntegrationId.Lodgify : IntegrationId.Guesty
   }
@@ -54,7 +56,7 @@ export function AddClientModal({ onClientAdded }: AddClientModalProps) {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/getAdminData', {
+      const response = await fetch(`${SERVER_URL}/api/getAdminData`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

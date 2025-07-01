@@ -18,7 +18,7 @@ export default function Page({ params }: PageProps) {
   // ⭐ 1) Create a ref to access child's handleUpdateClientData
   const formRef = useRef<FormRefType>(null);
 
-  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080';
 
   // 2) Helper to get integration label
   function getIntegrationLabel(integrationId?: string): string {
