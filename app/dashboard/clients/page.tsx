@@ -4,7 +4,7 @@ import { ClientsList } from "@/components/clients-list";
 import { ClientStats } from "@/components/client-stats";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface ClientData {
   id: number;
@@ -45,7 +45,8 @@ async function getClients(): Promise<Client[]> {
       headers: {
         'Content-Type': 'application/json',
       },
-      // Remove cache: 'no-store' to allow better caching
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     });
 
     if (!response.ok) {
@@ -95,8 +96,15 @@ export default function ClientsPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const hasAttemptedFetch = useRef(false); // Prevent multiple fetches
 
   useEffect(() => {
+    // Prevent infinite loops
+    if (hasAttemptedFetch.current) {
+      return;
+    }
+
     if (isLoaded && !userId) {
       console.log("🔐 User not authenticated, redirecting to sign-in");
       router.push('/sign-in');
@@ -105,8 +113,17 @@ export default function ClientsPage() {
 
     if (isLoaded && userId) {
       console.log("🔐 User authenticated, loading clients");
+      hasAttemptedFetch.current = true; // Mark as attempted
+      
       getClients().then(data => {
         setClients(data);
+        setIsLoading(false);
+        if (data.length === 0) {
+          setError("API server unavailable. Please check deployment.");
+        }
+      }).catch(err => {
+        console.error("Failed to load clients:", err);
+        setError("Failed to load clients. API server may be down.");
         setIsLoading(false);
       });
     }
@@ -135,6 +152,15 @@ export default function ClientsPage() {
           Manage your clients and their information.
         </p>
       </div>
+      
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800">⚠️ {error}</p>
+          <p className="text-sm text-red-600 mt-2">
+            Please check that your API server is deployed and the NEXT_PUBLIC_SERVER_URL is correct.
+          </p>
+        </div>
+      )}
       
       <ClientStats stats={clientStats} />
       <ClientsList initialClients={clients} />
