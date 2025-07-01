@@ -2,6 +2,6 @@
 import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  // Always redirect the root route ("/") to "/sign-in"
-  redirect("/sign-in");
+  // Redirect the root route ("/") to the dashboard since no auth is required
+  redirect("/dashboard/clients");
 }
