@@ -1,15 +1,8 @@
 // app/page.tsx
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
-export default async function HomePage() {
-  const { userId } = await auth();
-  
-  if (userId) {
-    // User is authenticated, redirect to dashboard
-    redirect("/dashboard/clients");
-  } else {
-    // User is not authenticated, redirect to sign-in
-    redirect("/sign-in");
-  }
+export default function HomePage() {
+  // Temporarily redirect directly to dashboard to break auth loops
+  // TODO: Re-add auth check once Clerk is configured properly
+  redirect("/dashboard/clients");
 }
