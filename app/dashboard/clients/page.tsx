@@ -15,7 +15,12 @@ interface ClientData {
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080';
 
 async function getClients() {
-  console.log('SERVER_URL:', SERVER_URL);
+  console.log('=== DEBUG INFO ===');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('NEXT_PUBLIC_SERVER_URL from env:', process.env.NEXT_PUBLIC_SERVER_URL);
+  console.log('SERVER_URL final value:', SERVER_URL);
+  console.log('Full URL being used:', `${SERVER_URL}/api/getAdminData`);
+  console.log('==================');
   
   if (!SERVER_URL) {
     throw new Error("SERVER_URL is not configured. Please set NEXT_PUBLIC_SERVER_URL environment variable.");
