@@ -5,16 +5,37 @@ import { ClientPreferencesForm } from "@/components/client-preferences-form";
 import { CodeGenerator } from "@/components/code-generator";
 import { Button } from "@/components/ui/button";
 import { ClientData } from "@/data/types";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 interface PageProps {
-  params: { id: string };
+  params: {
+    id: string;
+  };
 }
 
 interface FormRefType {
   handleUpdateClientData: () => Promise<void>;
 }
 
-export default function Page({ params }: PageProps) {
+// Helper to get integration label
+function getIntegrationLabel(integrationId?: string): string {
+  const idString = integrationId == null ? "" : integrationId.toString();
+  switch (idString) {
+    case "1":
+      return "guesty";
+    case "2":
+      return "lodgify";
+    case "3":
+      return "hostaway";
+    default:
+      return "";
+  }
+}
+
+export default function ClientPreferencesPage({ params }: PageProps) {
+  const { isLoaded, userId } = useAuth();
+  const router = useRouter();
   const [clientData, setClientData] = useState<ClientData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,92 +45,95 @@ export default function Page({ params }: PageProps) {
 
   const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080';
 
-  // 2) Helper to get integration label
-  function getIntegrationLabel(integrationId?: string): string {
-    const idString = integrationId == null ? "" : integrationId.toString();
-    switch (idString) {
-      case "1":
-        return "guesty";
-      case "2":
-        return "lodgify";
-      case "3":
-        return "hostaway";
-      default:
-        return "";
-    }
-  }
-
-  // 3) Fetch client data
   useEffect(() => {
-    const fetchClientPreferences = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+    if (isLoaded && !userId) {
+      router.push('/sign-in');
+      return;
+    }
 
-        const response = await fetch(
-          `${SERVER_URL}/api/getAdminData?clientCuid=${params.id}`
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+    if (isLoaded && userId) {
+      // 3) Fetch client data
+      const fetchClientPreferences = async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+
+          const response = await fetch(
+            `${SERVER_URL}/api/getAdminData?clientCuid=${params.id}`
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const { preferences } = data;
+
+          // Build initial clientData
+          const newClientData: ClientData = {
+            status: data.status,
+            accessKey: data.cuid,
+            name: data.name,
+            email: data.email || "",
+            ApiKey: data.ApiKey || "",
+            integrationId: data.integrationId,
+            clientSecret: data.clientSecret || "",
+            clientID: data.clientID || "",
+            preferences: {
+              integrationLabel: getIntegrationLabel(data.integrationId) || "",
+              locationFilter: Boolean(preferences.locationFilter),
+              lodgifyWsUrl: preferences.lodgifyWsUrl || "",
+              lodgifyWsId: preferences.lodgifyWsId || "",
+              primaryColor: preferences.primaryColor || "",
+              secondaryColor: preferences.secondaryColor || "",
+              bookingFooterColor: preferences.bookingFooterColor || "",
+              buttonFontColorOnHover: preferences.buttonFontColorOnHover || "",
+              customDomain: preferences.customDomain || "",
+              headingFont: preferences.headingFont || "",
+              bodyFont: preferences.bodyFont || "",
+              fontLink: preferences.fontLink || "",
+              currencies: Array.isArray(preferences.currencies)
+                ? preferences.currencies
+                : [],
+              imgLink: preferences.imgLink || "",
+              wixCmsUrl: preferences.wixCmsUrl || "",
+              maxGuests: preferences.maxGuests || 0,
+              language: preferences.language || "",
+            },
+          };
+          
+          setClientData(newClientData);
+        } catch (err) {
+          console.error("Error fetching data:", err);
+          setError(err instanceof Error ? err.message : "An error occurred");
+          setClientData(null);
+        } finally {
+          setIsLoading(false);
         }
+      };
 
-        const data = await response.json();
-        const { preferences } = data;
-
-        // Build initial clientData
-        setClientData({
-          status: data.status,
-          accessKey: data.cuid,
-          name: data.name,
-          email: data.email || "",
-          ApiKey: data.ApiKey || "",
-          integrationId: data.integrationId,
-          clientSecret: data.clientSecret || "",
-          clientID: data.clientID || "",
-          preferences: {
-            integrationLabel: getIntegrationLabel(data.integrationId) || "",
-            locationFilter: Boolean(preferences.locationFilter),
-            lodgifyWsUrl: preferences.lodgifyWsUrl || "",
-            lodgifyWsId: preferences.lodgifyWsId || "",
-            primaryColor: preferences.primaryColor || "",
-            secondaryColor: preferences.secondaryColor || "",
-            bookingFooterColor: preferences.bookingFooterColor || "",
-            buttonFontColorOnHover: preferences.buttonFontColorOnHover || "",
-            customDomain: preferences.customDomain || "",
-            headingFont: preferences.headingFont || "",
-            bodyFont: preferences.bodyFont || "",
-            fontLink: preferences.fontLink || "",
-            currencies: Array.isArray(preferences.currencies)
-              ? preferences.currencies
-              : [],
-            imgLink: preferences.imgLink || "",
-            wixCmsUrl: preferences.wixCmsUrl || "",
-            maxGuests: preferences.maxGuests || 0,
-            language: preferences.language || "",
-          },
-        });
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError(err instanceof Error ? err.message : "An error occurred");
-        setClientData(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchClientPreferences();
-  }, [params.id, SERVER_URL]);
+      fetchClientPreferences();
+    }
+  }, [isLoaded, userId, router, params.id, SERVER_URL]);
 
   // 4) Update local state from child
   const handleClientDataChange = (updatedClientData: ClientData) => {
     setClientData(updatedClientData);
   };
 
-  if (isLoading) {
+  if (!isLoaded || isLoading) {
     return <div>Loading...</div>;
   }
+
+  if (!userId) {
+    return null; // Will redirect in useEffect
+  }
+
   if (error) {
     return <div>Error: {error}</div>;
+  }
+
+  if (!clientData) {
+    return <div>No client data found</div>;
   }
 
   return (
@@ -139,17 +163,13 @@ export default function Page({ params }: PageProps) {
       {/* Page Content */}
       <div className="space-y-6">
         <div className="grid gap-6 md:grid-cols-2">
-          {clientData && (
-            <>
-              <ClientPreferencesForm
-                ref={formRef}
-                clientId={params.id}
-                clientData={clientData}
-                handleClientDataChange={handleClientDataChange}
-              />
-              <CodeGenerator clientData={clientData} />
-            </>
-          )}
+          <ClientPreferencesForm
+            ref={formRef}
+            clientId={params.id}
+            clientData={clientData}
+            handleClientDataChange={handleClientDataChange}
+          />
+          <CodeGenerator clientData={clientData} />
         </div>
       </div>
     </>

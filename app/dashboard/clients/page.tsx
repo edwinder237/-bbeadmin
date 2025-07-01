@@ -1,7 +1,10 @@
+"use client";
+
 import { ClientsList } from "@/components/clients-list";
 import { ClientStats } from "@/components/client-stats";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface ClientData {
   id: number;
@@ -12,79 +15,58 @@ interface ClientData {
   cuid?: string;
 }
 
-const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080';
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  lastActive: string;
+  status: "Active" | "Inactive" | "Pending";
+  client: ClientData;
+  cuid: string;
+}
 
-async function getClients() {
-  // Enhanced debugging for production
-  console.log('🔍 === ENHANCED DEBUG INFO ===');
-  console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
-  console.log('🔗 NEXT_PUBLIC_SERVER_URL from env:', process.env.NEXT_PUBLIC_SERVER_URL);
-  console.log('📍 SERVER_URL final value:', SERVER_URL);
-  console.log('🚀 Full URL being used:', `${SERVER_URL}/api/getAdminData`);
-  console.log('⚡ Environment variables available:', Object.keys(process.env).filter(key => key.startsWith('NEXT_PUBLIC')));
-  console.log('===============================');
-  
-  if (!SERVER_URL) {
-    throw new Error("SERVER_URL is not configured. Please set NEXT_PUBLIC_SERVER_URL environment variable.");
-  }
-  
+async function getClients(): Promise<Client[]> {
   try {
-    console.log('📡 Attempting to fetch from:', `${SERVER_URL}/api/getAdminData`);
+    // Enhanced debugging
+    console.log("🔍 === ENHANCED DEBUG INFO ===");
+    console.log("🌍 NODE_ENV:", process.env.NODE_ENV);
+    console.log("🔗 NEXT_PUBLIC_SERVER_URL from env:", process.env.NEXT_PUBLIC_SERVER_URL);
     
-    // Test if the server URL itself is reachable
-    const startTime = Date.now();
-    const res = await fetch(`${SERVER_URL}/api/getAdminData`, {
-      cache: "no-store",
+    const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080';
+    console.log("📍 SERVER_URL final value:", SERVER_URL);
+    console.log("🚀 Full URL being used:", `${SERVER_URL}/api/getAdminData`);
+    console.log("⚡ Environment variables available:", Object.keys(process.env).filter(key => key.startsWith('NEXT_PUBLIC')));
+    console.log("===============================");
+    
+    console.log("📡 Attempting to fetch from:", `${SERVER_URL}/api/getAdminData`);
+    
+    const response = await fetch(`${SERVER_URL}/api/getAdminData`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'BBE-Admin-Dashboard'
       },
+      // Remove cache: 'no-store' to allow better caching
     });
-    const endTime = Date.now();
-    
-    console.log('⏱️ Request took:', endTime - startTime, 'ms');
-    console.log('📊 Response status:', res.status);
-    console.log('✅ Response ok:', res.ok);
-    console.log('📋 Response headers:', Object.fromEntries(res.headers.entries()));
-    
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('❌ Response error:', errorText);
-      console.error('🔍 Response status text:', res.statusText);
-      
-      // Return empty array if API is unavailable instead of crashing
-      if (res.status >= 500 || res.status === 0 || res.status === 404) {
-        console.warn('⚠️ API server unavailable, returning empty client list');
-        console.warn('💡 Possible issues:');
-        console.warn('   - API server deployment was deleted');
-        console.warn('   - Wrong URL in NEXT_PUBLIC_SERVER_URL');
-        console.warn('   - API server is down');
-        return [];
-      }
-      
-      throw new Error(`Failed to fetch clients: ${res.status} ${res.statusText} - ${errorText}`);
+
+    if (!response.ok) {
+      console.error(`❌ HTTP Error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("🚨 Error response body:", errorText);
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
     }
 
-    const data = await res.json();
-    console.log('✅ Data received successfully, type:', typeof data, 'length:', Array.isArray(data) ? data.length : 'not array');
+    const data = await response.json();
+    console.log("✅ Successfully fetched data:", data);
     
-    // Handle empty or invalid response
-    if (!Array.isArray(data)) {
-      console.warn('⚠️ API returned non-array data:', typeof data, data);
-      return [];
-    }
-    
-    console.log('🎉 Successfully mapped', data.length, 'clients');
-    
-    return data.map((client: ClientData) => {
+    // Transform ClientData[] to Client[]
+    const clients: Client[] = (data || []).map((client: ClientData) => {
       // Map API status to Client interface status
       let mappedStatus: "Active" | "Inactive" | "Pending" = "Inactive";
       if (client.status === "Production") mappedStatus = "Active";
       else if (client.status === "Testing") mappedStatus = "Pending";
       else mappedStatus = "Inactive";
-      
+
       return {
-        ...client,
         id: client.id.toString(),
         name: client.name,
         email: client.email,
@@ -94,75 +76,79 @@ async function getClients() {
         cuid: client.cuid || client.id.toString(),
       };
     });
+    
+    return clients;
   } catch (error) {
-    console.error('💥 Error in getClients:', error);
-    console.error('🔍 Error details:', {
+    console.error("💥 Error in getClients:", error);
+    console.log("🔍 Error details:", {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : 'No stack trace'
     });
-    
-    // In production, don't crash the entire page - return empty array
-    if (process.env.NODE_ENV === 'production') {
-      console.warn('🚨 Falling back to empty client list due to API error');
-      return [];
-    }
-    
-    throw error;
+    console.log("🚨 Falling back to empty client list due to API error");
+    return [];
   }
 }
 
-export default async function ClientsPage() {
-  // Check authentication with Clerk - but don't redirect if not authenticated (temporary)
-  try {
-    const { userId } = await auth();
-    console.log('🔐 Auth check - userId:', userId ? 'Present' : 'Not found');
-    
-    // Temporarily commenting out redirect to avoid auth loops
-    // if (!userId) {
-    //   redirect("/sign-in");
-    // }
-  } catch (authError) {
-    console.log('🔐 Auth check failed:', authError);
-    // Continue anyway for debugging
+export default function ClientsPage() {
+  const { isLoaded, userId } = useAuth();
+  const router = useRouter();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (isLoaded && !userId) {
+      console.log("🔐 User not authenticated, redirecting to sign-in");
+      router.push('/sign-in');
+      return;
+    }
+
+    if (isLoaded && userId) {
+      console.log("🔐 User authenticated, loading clients");
+      getClients().then(data => {
+        setClients(data);
+        setIsLoading(false);
+      });
+    }
+  }, [isLoaded, userId, router]);
+
+  if (!isLoaded || isLoading) {
+    return <div>Loading...</div>;
   }
 
-  const clients = await getClients();
+  if (!userId) {
+    return null; // Will redirect in useEffect
+  }
+
   const clientStats = {
     totalClients: clients.length,
-    activeClients: clients.filter(
-      (c: { status: string }) => c.status === "Active"
-    ).length,
-    pendingClients: clients.filter(
-      (c: { status: string }) => c.status === "Pending"
-    ).length,
-    inactiveClients: clients.filter(
-      (c: { status: string }) => c.status === "Inactive"
-    ).length,
+    activeClients: clients.filter((c) => c.status === "Active").length,
+    pendingClients: clients.filter((c) => c.status === "Pending").length,
+    inactiveClients: clients.filter((c) => c.status === "Inactive").length,
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Client Management</h1>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
+        <p className="text-muted-foreground">
+          Manage your clients and their information.
+        </p>
       </div>
-      {clients.length === 0 ? (
-        <div className="text-center py-8 space-y-4">
-          <p className="text-muted-foreground">
-            No clients available. Please check your API server connection.
-          </p>
+      
+      <ClientStats stats={clientStats} />
+      <ClientsList initialClients={clients} />
+      
+      {/* Debug info for production */}
+      {process.env.NODE_ENV === 'production' && (
+        <div className="mt-8 p-4 bg-muted rounded-lg">
           <div className="text-sm text-muted-foreground">
             <p><strong>Debug Info (Production):</strong></p>
-            <p>API URL: {SERVER_URL}</p>
+            <p>API URL: {process.env.NEXT_PUBLIC_SERVER_URL}</p>
             <p>Environment: {process.env.NODE_ENV}</p>
             <p>Check the browser console for detailed logs.</p>
           </div>
         </div>
-      ) : (
-        <>
-          <ClientStats stats={clientStats} />
-          <ClientsList initialClients={clients} />
-        </>
       )}
     </div>
   );
