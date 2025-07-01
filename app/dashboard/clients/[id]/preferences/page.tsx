@@ -1,13 +1,17 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import { ClientPreferencesForm, FormRefType } from "@/components/client-preferences-form";
+import { useState, useEffect, useRef } from "react";
+import { ClientPreferencesForm } from "@/components/client-preferences-form";
 import { CodeGenerator } from "@/components/code-generator";
-import { ClientData } from "@/data/types";
 import { Button } from "@/components/ui/button";
+import { ClientData } from "@/data/types";
 
 interface PageProps {
   params: { id: string };
+}
+
+interface FormRefType {
+  handleUpdateClientData: () => Promise<void>;
 }
 
 export default function Page({ params }: PageProps) {

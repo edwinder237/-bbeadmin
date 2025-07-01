@@ -1,7 +1,5 @@
 import { ClientsList } from "@/components/clients-list";
 import { ClientStats } from "@/components/client-stats";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 
 interface ClientData {
   id: number;
@@ -94,24 +92,19 @@ async function getClients() {
 }
 
 export default async function ClientsPage() {
-  // Check authentication in server component
-  const { userId } = await auth();
-  
-  if (!userId) {
-    redirect("/sign-in");
-  }
+  // Removed Clerk auth check - no authentication required
 
   const clients = await getClients();
   const clientStats = {
     totalClients: clients.length,
     activeClients: clients.filter(
-      (c: { status: string }) => c.status === "Production"
+      (c: { status: string }) => c.status === "Active"
     ).length,
     pendingClients: clients.filter(
-      (c: { status: string }) => c.status === "Testing"
+      (c: { status: string }) => c.status === "Pending"
     ).length,
     inactiveClients: clients.filter(
-      (c: { status: string }) => c.status === "Development"
+      (c: { status: string }) => c.status === "Inactive"
     ).length,
   };
 

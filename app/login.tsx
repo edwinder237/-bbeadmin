@@ -1,28 +1,13 @@
-import { auth } from "@clerk/nextjs/server"; // Server-side import
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-// Import Clerk's SignIn component in the same file.
-// We'll render it inside a nested client component below.
-import { SignIn } from "@clerk/nextjs";
+import { LoginForm } from "@/components/login-form";
 
 export const metadata: Metadata = {
   title: "Login",
   description: "Login to the IT admin dashboard",
 };
 
-export default async function LoginPage() {
-  // 1. SERVER COMPONENT LOGIC
-  // Check user session on the server
-  const { userId } = await auth();
-
-  // If the user is already logged in, redirect to the dashboard
-  if (userId) {
-    redirect("/dashboard");
-  }
-
-  // 2. RETURN JSX (Server component output)
-  // Renders the layout, including a nested client component for the Clerk SignIn form
+export default function LoginPage() {
   return (
     <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
@@ -63,8 +48,7 @@ export default async function LoginPage() {
             </p>
           </div>
 
-          {/* 3. NESTED CLIENT COMPONENT WITH CLERK SIGN-IN */}
-          <ClientSignIn />
+          <LoginForm />
 
           <p className="px-8 text-center text-sm text-muted-foreground">
             By logging in, you agree to our{" "}
@@ -81,10 +65,4 @@ export default async function LoginPage() {
       </div>
     </div>
   );
-}
-
-// 4. DEFINE A CLIENT COMPONENT **INSIDE** THIS SERVER FILE
-function ClientSignIn() {
-  "use client";
-  return <SignIn />;
 }
