@@ -15,6 +15,7 @@ interface ClientData {
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080';
 
 async function getClients() {
+  // Production API URL: https://nodejs-serverless-function-express-omega-rouge.vercel.app
   console.log('=== DEBUG INFO ===');
   console.log('NODE_ENV:', process.env.NODE_ENV);
   console.log('NEXT_PUBLIC_SERVER_URL from env:', process.env.NEXT_PUBLIC_SERVER_URL);
