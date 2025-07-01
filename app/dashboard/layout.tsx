@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Laptop, Users, Settings, BarChart } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ThemeProvider } from "@/components/theme-provider";
+import { UserButton } from "@clerk/nextjs";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -49,6 +50,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </Button>
               </Link>
               <ThemeToggle />
+              <UserButton afterSignOutUrl="/" />
             </nav>
           </div>
         </header>

@@ -1,5 +1,7 @@
 import { ClientsList } from "@/components/clients-list";
 import { ClientStats } from "@/components/client-stats";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
 interface ClientData {
   id: number;
@@ -92,7 +94,12 @@ async function getClients() {
 }
 
 export default async function ClientsPage() {
-  // Removed Clerk auth check - no authentication required
+  // Check authentication with Clerk
+  const { userId } = await auth();
+  
+  if (!userId) {
+    redirect("/sign-in");
+  }
 
   const clients = await getClients();
   const clientStats = {

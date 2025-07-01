@@ -268,7 +268,7 @@ export function SINGLE_LISTING_WidgetCode(clientData: ClientData): string {
         location: "",
       };
        const BUTTON_ICON_COLOR_ON_HOVER = "${preferences.buttonFontColorOnHover}";
-       const PRIMARY_PALETTE: [
+       const PRIMARY_PALETTE= [
             "--c-primary-50: 248, 250, 252",
             "--c-primary-100: 241, 245, 249",
             "--c-primary-200: 10, 232, 240",
@@ -280,7 +280,7 @@ export function SINGLE_LISTING_WidgetCode(clientData: ClientData): string {
             "--c-primary-800: 66, 41, 59",
             "--c-primary-900: 22, 23, 42",
           ];
-        const SECONDARY_PALETTE: [
+        const SECONDARY_PALETTE= [
                       "--c-secondary-50: 248, 250, 252",
             "--c-secondary-100: 241, 245, 249",
             "--c-secondary-200: 226, 232, 240",
@@ -292,7 +292,7 @@ export function SINGLE_LISTING_WidgetCode(clientData: ClientData): string {
             "--c-secondary-800: 30, 41, 59",
             "--c-secondary-900: 15, 23, 42",
           ];
-        const NEUTRAL_PALETTE: [
+        const NEUTRAL_PALETTE= [
             "--c-neutral-50: 255,255,255",
             "--c-neutral-100: 241, 245, 249" /*dividers and light buttons eg; show all photos */,
             "--c-neutral-200: 226, 232, 240" /*BORDERS COLOR */,

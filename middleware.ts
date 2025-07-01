@@ -1,13 +1,9 @@
 // middleware.ts
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { clerkMiddleware } from '@clerk/nextjs/server'
 
-export function middleware(request: NextRequest) {
-  // Simple middleware without authentication
-  return NextResponse.next();
-}
+export default clerkMiddleware()
 
 export const config = {
   // Match all routes (avoid matching files like _next or static assets)
-  matcher: ["/((?!.*\\..*|_next).*)", "/"],
+  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 };
