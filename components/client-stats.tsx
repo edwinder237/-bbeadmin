@@ -4,8 +4,6 @@ import {
   UserCheck, 
   Clock, 
   Building, 
-  TrendingUp,
-  Activity,
   AlertCircle
 } from "lucide-react"
 

@@ -16,7 +16,6 @@ import {
   Activity,
   ChevronRight,
   Building,
-  Globe,
   Zap
 } from "lucide-react";
 
