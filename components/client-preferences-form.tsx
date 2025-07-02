@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -24,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Plus, Trash2 } from "lucide-react";
+import { Todo } from "@/data/types";
 
 // ====== 1) Shared Helpers ======
 function getIntegrationLabel(integrationId?: string): string {
@@ -65,6 +68,69 @@ type ClientPreferencesFormProps = {
 };
 
 const currencyOptions = ["USD", "EUR", "CAD"];
+
+const defaultTodos: Todo[] = [
+  {
+    id: "default-1",
+    text: "Client Colors and Font set",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-2", 
+    text: "Max guests set",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-3",
+    text: "Image uploaded to blob server",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-4",
+    text: "All listings wix page completed",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-5",
+    text: "Dynamic pages completed",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-6",
+    text: "Search bar connected",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-7",
+    text: "Target domain set to iframe code",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-8",
+    text: "Page size set for all listing and single page",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-9",
+    text: "Headers size checked",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-10",
+    text: "Mobile size check",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+];
 
 // ====== 3) Component ======
 export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFormProps>(
@@ -110,6 +176,7 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
         wixCmsUrl: clientData?.preferences?.wixCmsUrl || "",
         maxGuests: clientData?.preferences?.maxGuests || 0,
         language: clientData?.preferences?.language || "",
+        todos: clientData?.preferences?.todos?.length > 0 ? clientData.preferences.todos : defaultTodos,
       },
     });
 
@@ -160,6 +227,58 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
             : editedClientData.preferences.currencies.filter(
                 (c) => c !== currency
               ),
+        },
+      };
+      setEditedClientData(updatedData);
+      handleClientDataChange(updatedData);
+    }
+
+    // Todo handlers
+    function addTodo(text: string) {
+      const newTodo: Todo = {
+        id: Date.now().toString(),
+        text: text.trim(),
+        completed: false,
+        createdAt: new Date().toISOString(),
+      };
+      
+      const updatedData = {
+        ...editedClientData,
+        preferences: {
+          ...editedClientData.preferences,
+          todos: [...editedClientData.preferences.todos, newTodo],
+        },
+      };
+      setEditedClientData(updatedData);
+      handleClientDataChange(updatedData);
+    }
+
+    function toggleTodo(todoId: string) {
+      const updatedData = {
+        ...editedClientData,
+        preferences: {
+          ...editedClientData.preferences,
+          todos: editedClientData.preferences.todos.map(todo =>
+            todo.id === todoId
+              ? {
+                  ...todo,
+                  completed: !todo.completed,
+                  completedAt: !todo.completed ? new Date().toISOString() : undefined,
+                }
+              : todo
+          ),
+        },
+      };
+      setEditedClientData(updatedData);
+      handleClientDataChange(updatedData);
+    }
+
+    function removeTodo(todoId: string) {
+      const updatedData = {
+        ...editedClientData,
+        preferences: {
+          ...editedClientData.preferences,
+          todos: editedClientData.preferences.todos.filter(todo => todo.id !== todoId),
         },
       };
       setEditedClientData(updatedData);
@@ -669,6 +788,78 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
                   onChange={handlePreferenceChange}
                   placeholder="https://fonts.googleapis.com/css2?family=..."
                 />
+              </div>
+            </div>
+
+            {/* ---------- Todo List ---------- */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Todo List</h3>
+              
+              {/* Add new todo */}
+              <div className="flex items-center space-x-2">
+                <Input
+                  id="newTodo"
+                  placeholder="Add a new todo..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const input = e.target as HTMLInputElement;
+                      if (input.value.trim()) {
+                        addTodo(input.value);
+                        input.value = '';
+                      }
+                    }
+                  }}
+                  className="flex-grow"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    const input = document.getElementById('newTodo') as HTMLInputElement;
+                    if (input.value.trim()) {
+                      addTodo(input.value);
+                      input.value = '';
+                    }
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Todo list */}
+              <div className="space-y-2">
+                {prefs.todos.map((todo) => (
+                  <div key={todo.id} className="flex items-center space-x-3 p-3 border rounded-lg bg-muted/50">
+                    <Checkbox
+                      checked={todo.completed}
+                      onCheckedChange={() => toggleTodo(todo.id)}
+                    />
+                    <div className="flex-grow">
+                      <p className={`text-sm ${todo.completed ? 'line-through text-muted-foreground' : ''}`}>
+                        {todo.text}
+                      </p>
+                      <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
+                        <span>Created: {new Date(todo.createdAt).toLocaleDateString()}</span>
+                        {todo.completed && todo.completedAt && (
+                          <span>• Completed: {new Date(todo.completedAt).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeTodo(todo.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {prefs.todos.length === 0 && (
+                  <p className="text-muted-foreground text-sm text-center py-4">
+                    No todos yet. Add one above to get started!
+                  </p>
+                )}
               </div>
             </div>
           </form>

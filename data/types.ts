@@ -1,3 +1,11 @@
+export type Todo = {
+  id: string
+  text: string
+  completed: boolean
+  createdAt: string
+  completedAt?: string
+}
+
 export type ClientPreferences = {
   locationFilter: boolean
   lodgifyWsUrl: string
@@ -16,6 +24,7 @@ export type ClientPreferences = {
   maxGuests: number
   language: string
   integrationLabel: string
+  todos: Todo[]
 }
 
 export type ClientData = {
@@ -27,5 +36,6 @@ export type ClientData = {
   clientID?: string
   clientSecret?: string
   integrationId: string
+  integrationType?: string
   preferences: ClientPreferences
 }

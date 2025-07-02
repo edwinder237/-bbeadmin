@@ -1,58 +1,102 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, UserCheck, ClockIcon as UserClock, Building } from "lucide-react"
-
+import { 
+  Users, 
+  UserCheck, 
+  Clock, 
+  Building, 
+  TrendingUp,
+  Activity,
+  AlertCircle
+} from "lucide-react"
 
 type ClientStats = {
   totalClients: number
   activeClients: number
   pendingClients: number
+  developmentClients: number
   inactiveClients: number
 }
 
 export function ClientStats({ stats }: { stats: ClientStats }) {
+  const statusData = [
+    {
+      label: "Production",
+      value: stats.activeClients,
+      percentage: (stats.activeClients / stats.totalClients) * 100,
+      icon: UserCheck,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      progressColor: "bg-green-500"
+    },
+    {
+      label: "Development",
+      value: stats.developmentClients,
+      percentage: (stats.developmentClients / stats.totalClients) * 100,
+      icon: Building,
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-50",
+      progressColor: "bg-yellow-500"
+    },
+    {
+      label: "Testing",
+      value: stats.pendingClients,
+      percentage: (stats.pendingClients / stats.totalClients) * 100,
+      icon: Clock,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+      progressColor: "bg-orange-500"
+    },
+    {
+      label: "Inactive",
+      value: stats.inactiveClients,
+      percentage: (stats.inactiveClients / stats.totalClients) * 100,
+      icon: AlertCircle,
+      color: "text-gray-600",
+      bgColor: "bg-gray-50",
+      progressColor: "bg-gray-500"
+    }
+  ];
+
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+    <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Users className="h-5 w-5 text-blue-600" />
+            <span>Client Status Breakdown</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.totalClients}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Client Status Breakdown</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="divide-y divide-border">
-            <div className="flex items-center justify-between py-3 hover:bg-muted/50 rounded-lg transition-colors px-2">
-              <span className="flex items-center">
-                <UserCheck className="h-4 w-4 mr-2 text-green-500" />
-                <span className="text-sm font-medium">Production</span>
-              </span>
-              <span className="text-lg font-semibold">{stats.activeClients}</span>
-            </div>
-            <div className="flex items-center justify-between py-3 hover:bg-muted/50 rounded-lg transition-colors px-2">
-              <span className="flex items-center">
-                <UserClock className="h-4 w-4 mr-2 text-yellow-500" />
-                <span className="text-sm font-medium">Testing</span>
-              </span>
-              <span className="text-lg font-semibold">{stats.pendingClients}</span>
-            </div>
-            <div className="flex items-center justify-between py-3 hover:bg-muted/50 rounded-lg transition-colors px-2">
-              <span className="flex items-center">
-                <Building className="h-4 w-4 mr-2 text-gray-500" />
-                <span className="text-sm font-medium">Development</span>
-              </span>
-              <span className="text-lg font-semibold">{stats.inactiveClients}</span>
-            </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            {statusData.map((status) => (
+              <div key={status.label} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`h-10 w-10 rounded-lg ${status.bgColor} flex items-center justify-center`}>
+                      <status.icon className={`h-5 w-5 ${status.color}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium">{status.label}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {status.percentage.toFixed(1)}% of total
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">{status.value}</div>
+                    <p className="text-xs text-muted-foreground">clients</p>
+                  </div>
+                </div>
+                                 <div className="w-full bg-gray-200 rounded-full h-2">
+                   <div 
+                     className={`h-2 rounded-full transition-all duration-300 ${status.progressColor}`}
+                     style={{ width: `${status.percentage}%` }}
+                   />
+                 </div>
+              </div>
+            ))}
           </div>
         </CardContent>
-      </Card>
-    </div>
+    </Card>
   )
 }
 

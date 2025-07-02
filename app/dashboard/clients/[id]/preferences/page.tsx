@@ -4,7 +4,70 @@ import { useState, useEffect, useRef } from "react";
 import { ClientPreferencesForm } from "@/components/client-preferences-form";
 import { CodeGenerator } from "@/components/code-generator";
 import { Button } from "@/components/ui/button";
-import { ClientData } from "@/data/types";
+import { ClientData, Todo } from "@/data/types";
+
+const defaultTodos: Todo[] = [
+  {
+    id: "default-1",
+    text: "Client Colors and Font set",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-2", 
+    text: "Max guests set",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-3",
+    text: "Image uploaded to blob server",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-4",
+    text: "All listings wix page completed",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-5",
+    text: "Dynamic pages completed",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-6",
+    text: "Search bar connected",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-7",
+    text: "Target domain set to iframe code",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-8",
+    text: "Page size set for all listing and single page",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-9",
+    text: "Headers size checked",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "default-10",
+    text: "Mobile size check",
+    completed: false,
+    createdAt: new Date().toISOString(),
+  },
+];
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
@@ -98,6 +161,7 @@ export default function ClientPreferencesPage({ params }: PageProps) {
               wixCmsUrl: preferences.wixCmsUrl || "",
               maxGuests: preferences.maxGuests || 0,
               language: preferences.language || "",
+              todos: Array.isArray(preferences.todos) && preferences.todos.length > 0 ? preferences.todos : defaultTodos,
             },
           };
           

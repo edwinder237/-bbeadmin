@@ -18,7 +18,8 @@ import { UserPlus,Loader2 } from "lucide-react"
 
 enum IntegrationId {
   Guesty = 1,
-  Lodgify = 2
+  Lodgify = 2,
+  Hostaway = 3
 }
 
 interface NewClientData {
@@ -40,7 +41,9 @@ export function AddClientModal({ onClientAdded }: AddClientModalProps) {
   const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080'
 
   const getIntegrationId = (integration: string): IntegrationId => {
-    return integration === 'lodgify' ? IntegrationId.Lodgify : IntegrationId.Guesty
+    if (integration === 'lodgify') return IntegrationId.Lodgify
+    if (integration === 'hostaway') return IntegrationId.Hostaway
+    return IntegrationId.Guesty
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -126,6 +129,7 @@ export function AddClientModal({ onClientAdded }: AddClientModalProps) {
                 <SelectContent>
                   <SelectItem value="lodgify">Lodgify</SelectItem>
                   <SelectItem value="guesty">Guesty</SelectItem>
+                  <SelectItem value="hostaway">Hostaway</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -160,6 +164,34 @@ export function AddClientModal({ onClientAdded }: AddClientModalProps) {
                     name="clientSecret"
                     className="col-span-3"
                     placeholder="Enter Guesty Client Secret"
+                    required
+                  />
+                </div>
+              </>
+            )}
+            {selectedIntegration === "hostaway" && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="clientId" className="text-right">
+                    Client ID
+                  </Label>
+                  <Input
+                    id="clientId"
+                    name="clientId"
+                    className="col-span-3"
+                    placeholder="Enter Hostaway Client ID"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="clientSecret" className="text-right">
+                    Client Secret
+                  </Label>
+                  <Input
+                    id="clientSecret"
+                    name="clientSecret"
+                    className="col-span-3"
+                    placeholder="Enter Hostaway Client Secret"
                     required
                   />
                 </div>

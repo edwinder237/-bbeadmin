@@ -13,6 +13,7 @@ interface ClientData {
   updatedAt: string;
   status: string;
   cuid?: string;
+  integrationId?: number;
 }
 
 interface Client {
@@ -20,7 +21,8 @@ interface Client {
   name: string;
   email: string;
   lastActive: string;
-  status: "Active" | "Inactive" | "Pending";
+  status: "Active" | "Inactive" | "Pending" | "Development";
+  integrationType?: string;
   client: ClientData;
   cuid: string;
 }
@@ -62,10 +64,17 @@ async function getClients(): Promise<Client[]> {
     // Transform ClientData[] to Client[]
     const clients: Client[] = (data || []).map((client: ClientData) => {
       // Map API status to Client interface status
-      let mappedStatus: "Active" | "Inactive" | "Pending" = "Inactive";
+      let mappedStatus: "Active" | "Inactive" | "Pending" | "Development" = "Inactive";
       if (client.status === "Production") mappedStatus = "Active";
       else if (client.status === "Testing") mappedStatus = "Pending";
+      else if (client.status === "Development") mappedStatus = "Development";
       else mappedStatus = "Inactive";
+
+      // Map integration ID to human-readable type
+      let integrationType = "Unknown";
+      if (client.integrationId === 1) integrationType = "Guesty";
+      else if (client.integrationId === 2) integrationType = "Lodgify";
+      else if (client.integrationId === 3) integrationType = "Hostaway";
 
       return {
         id: client.id.toString(),
@@ -73,6 +82,7 @@ async function getClients(): Promise<Client[]> {
         email: client.email,
         lastActive: new Date(client.updatedAt).toISOString().split("T")[0],
         status: mappedStatus,
+        integrationType: integrationType,
         client: client,
         cuid: client.cuid || client.id.toString(),
       };
@@ -141,6 +151,7 @@ export default function ClientsPage() {
     totalClients: clients.length,
     activeClients: clients.filter((c) => c.status === "Active").length,
     pendingClients: clients.filter((c) => c.status === "Pending").length,
+    developmentClients: clients.filter((c) => c.status === "Development").length,
     inactiveClients: clients.filter((c) => c.status === "Inactive").length,
   };
 
