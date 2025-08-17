@@ -26,7 +26,9 @@ interface NewClientData {
   name: string
   email: string
   integrationId: IntegrationId
-  apikey: string
+  apikey?: string
+  clientID?: string
+  clientSecret?: string
 }
 
 interface AddClientModalProps {
@@ -51,11 +53,19 @@ export function AddClientModal({ onClientAdded }: AddClientModalProps) {
     setIsLoading(true)
 
     const formData = new FormData(event.currentTarget)
+    const integration = formData.get("integration") as string
     const clientData: NewClientData = {
       name: formData.get("name") as string,
       email: formData.get("email") as string,
-      integrationId: getIntegrationId(formData.get("integration") as string),
-      apikey: formData.get("apiKey") as string
+      integrationId: getIntegrationId(integration),
+    }
+
+    // Add integration-specific fields
+    if (integration === "lodgify") {
+      clientData.apikey = formData.get("apiKey") as string
+    } else if (integration === "guesty" || integration === "hostaway") {
+      clientData.clientID = formData.get("clientId") as string
+      clientData.clientSecret = formData.get("clientSecret") as string
     }
 
     try {

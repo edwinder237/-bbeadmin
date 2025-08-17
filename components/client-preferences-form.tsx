@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Upload, X } from "lucide-react";
 import { Todo } from "@/data/types";
 
 // ====== 1) Shared Helpers ======
@@ -67,7 +67,7 @@ type ClientPreferencesFormProps = {
   handleClientDataChange: (preferences: ClientData) => void;
 };
 
-const currencyOptions = ["USD", "EUR", "CAD"];
+const currencyOptions = ["USD", "EUR", "CAD", "MXN", "GBP", "AUD"];
 
 const defaultTodos: Todo[] = [
   {
@@ -143,6 +143,8 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
     const [isLoading, setIsLoading] = useState(false);
     //eslint-disable-next-line
     const [isUpdating, setIsUpdating] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const [deletingImage, setDeletingImage] = useState(false);
 
     const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080';
 
@@ -166,6 +168,7 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
         buttonFontColorOnHover:
           clientData?.preferences?.buttonFontColorOnHover || "0,0,0",
         customDomain: clientData?.preferences?.customDomain || "",
+        productionUrl: clientData?.preferences?.productionUrl || "",
         headingFont: clientData?.preferences?.headingFont || "",
         bodyFont: clientData?.preferences?.bodyFont || "",
         fontLink: clientData?.preferences?.fontLink || "",
@@ -176,6 +179,7 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
         wixCmsUrl: clientData?.preferences?.wixCmsUrl || "",
         maxGuests: clientData?.preferences?.maxGuests || 0,
         language: clientData?.preferences?.language || "",
+        devMode: clientData?.preferences?.devMode || false,
         todos: clientData?.preferences?.todos?.length > 0 ? clientData.preferences.todos : defaultTodos,
       },
     });
@@ -285,6 +289,109 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
       handleClientDataChange(updatedData);
     }
 
+    // Image upload handler
+    async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Validate file size (3MB max)
+      const maxSize = 3 * 1024 * 1024; // 3MB in bytes
+      if (file.size > maxSize) {
+        toast("File size exceeds 3MB limit");
+        return;
+      }
+
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        toast("Invalid file type. Only images are allowed (JPEG, PNG, GIF, WebP)");
+        return;
+      }
+
+      setUploadingImage(true);
+      
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Pass the current image URL so the old one can be deleted
+        if (prefs.imgLink) {
+          formData.append('oldImageUrl', prefs.imgLink);
+        }
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Upload failed');
+        }
+
+        const result = await response.json();
+        
+        // Update the imgLink field with the uploaded image URL
+        const updatedData = {
+          ...editedClientData,
+          preferences: {
+            ...editedClientData.preferences,
+            imgLink: result.url,
+          },
+        };
+        setEditedClientData(updatedData);
+        handleClientDataChange(updatedData);
+        
+        toast("Image uploaded successfully!");
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast(error instanceof Error ? error.message : "Failed to upload image");
+      } finally {
+        setUploadingImage(false);
+        // Reset the input
+        event.target.value = '';
+      }
+    }
+
+    // Image delete handler
+    async function handleImageDelete() {
+      if (!prefs.imgLink) return;
+
+      setDeletingImage(true);
+      
+      try {
+        // Only attempt to delete from Vercel Blob if it's a blob URL
+        if (prefs.imgLink.includes('vercel-storage.com')) {
+          const response = await fetch(`/api/upload?url=${encodeURIComponent(prefs.imgLink)}`, {
+            method: 'DELETE',
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Delete failed');
+          }
+        }
+        
+        // Clear the imgLink field regardless of whether it was a blob URL
+        const updatedData = {
+          ...editedClientData,
+          preferences: {
+            ...editedClientData.preferences,
+            imgLink: '',
+          },
+        };
+        setEditedClientData(updatedData);
+        handleClientDataChange(updatedData);
+        
+        toast("Image deleted successfully!");
+      } catch (error) {
+        console.error('Delete error:', error);
+        toast(error instanceof Error ? error.message : "Failed to delete image");
+      } finally {
+        setDeletingImage(false);
+      }
+    }
+
     // 3.3) PUT request logic
     const handleUpdateClientData = async () => {
       setIsUpdating(true);
@@ -342,7 +449,7 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
 
     // ====== Return JSX ======
     return (
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Edit Preferences</CardTitle>
         </CardHeader>
@@ -399,7 +506,7 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
                 </Select>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 {/* Name */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Client Name</Label>
@@ -518,13 +625,62 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
               {/* IMG Link */}
               <div className="space-y-2">
                 <Label htmlFor="imgLink">Image Link</Label>
-                <Input
-                  id="imgLink"
-                  name="imgLink"
-                  value={prefs.imgLink}
-                  onChange={handlePreferenceChange}
-                  placeholder="Enter image link"
-                />
+                <div className="flex items-center space-x-2">
+                  <Input
+                    id="imgLink"
+                    name="imgLink"
+                    value={prefs.imgLink}
+                    onChange={handlePreferenceChange}
+                    placeholder="Enter image link or upload a file"
+                    className="flex-grow"
+                  />
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      disabled={uploadingImage}
+                      id="image-upload-input"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploadingImage}
+                      onClick={() => {
+                        const input = document.getElementById('image-upload-input') as HTMLInputElement;
+                        input?.click();
+                      }}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploadingImage ? "Uploading..." : "Upload"}
+                    </Button>
+                  </div>
+                </div>
+                {prefs.imgLink && (
+                  <div className="mt-2 relative inline-block">
+                    <img 
+                      src={prefs.imgLink} 
+                      alt="Preview" 
+                      className="max-w-32 max-h-32 object-cover rounded border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleImageDelete}
+                      disabled={deletingImage}
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                      title="Delete image"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Max Guests */}
@@ -562,7 +718,7 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
               {/* Currency */}
               <div className="space-y-2">
                 <Label>Currency</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                   {currencyOptions.map((currency) => (
                     <div key={currency} className="flex items-center space-x-2">
                       <Checkbox
@@ -576,6 +732,18 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Production URL */}
+              <div className="space-y-2">
+                <Label htmlFor="productionUrl">Production URL</Label>
+                <Input
+                  id="productionUrl"
+                  name="productionUrl"
+                  value={prefs.productionUrl}
+                  onChange={handlePreferenceChange}
+                  placeholder="https://yourdomain.com"
+                />
               </div>
 
               {/* Wix CMS URL */}
@@ -623,7 +791,7 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
             {/* ---------- Color Settings ---------- */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Color Settings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Primary Color */}
                 <div className="space-y-2">
                   <Label htmlFor="primaryColor">Primary Color (RGB)</Label>
@@ -640,15 +808,17 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
                       type="text"
                       name="primaryColor"
                       value={prefs.primaryColor}
-                      onChange={(e) =>
-                        setEditedClientData((prev) => ({
-                          ...prev,
+                      onChange={(e) => {
+                        const updatedData = {
+                          ...editedClientData,
                           preferences: {
-                            ...prev.preferences,
+                            ...editedClientData.preferences,
                             primaryColor: e.target.value,
                           },
-                        }))
-                      }
+                        };
+                        setEditedClientData(updatedData);
+                        handleClientDataChange(updatedData);
+                      }}
                       className="flex-grow"
                       placeholder="R, G, B"
                     />
@@ -671,15 +841,17 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
                       type="text"
                       name="secondaryColor"
                       value={prefs.secondaryColor}
-                      onChange={(e) =>
-                        setEditedClientData((prev) => ({
-                          ...prev,
+                      onChange={(e) => {
+                        const updatedData = {
+                          ...editedClientData,
                           preferences: {
-                            ...prev.preferences,
+                            ...editedClientData.preferences,
                             secondaryColor: e.target.value,
                           },
-                        }))
-                      }
+                        };
+                        setEditedClientData(updatedData);
+                        handleClientDataChange(updatedData);
+                      }}
                       className="flex-grow"
                       placeholder="R, G, B"
                     />
@@ -704,15 +876,17 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
                       type="text"
                       name="bookingFooterColor"
                       value={prefs.bookingFooterColor}
-                      onChange={(e) =>
-                        setEditedClientData((prev) => ({
-                          ...prev,
+                      onChange={(e) => {
+                        const updatedData = {
+                          ...editedClientData,
                           preferences: {
-                            ...prev.preferences,
+                            ...editedClientData.preferences,
                             bookingFooterColor: e.target.value,
                           },
-                        }))
-                      }
+                        };
+                        setEditedClientData(updatedData);
+                        handleClientDataChange(updatedData);
+                      }}
                       className="flex-grow"
                       placeholder="R, G, B"
                     />
@@ -737,15 +911,17 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
                       type="text"
                       name="buttonFontColorOnHover"
                       value={prefs.buttonFontColorOnHover}
-                      onChange={(e) =>
-                        setEditedClientData((prev) => ({
-                          ...prev,
+                      onChange={(e) => {
+                        const updatedData = {
+                          ...editedClientData,
                           preferences: {
-                            ...prev.preferences,
+                            ...editedClientData.preferences,
                             buttonFontColorOnHover: e.target.value,
                           },
-                        }))
-                      }
+                        };
+                        setEditedClientData(updatedData);
+                        handleClientDataChange(updatedData);
+                      }}
                       className="flex-grow"
                       placeholder="R, G, B"
                     />

@@ -3,6 +3,7 @@ import exp from "constants";
 
 export function ALL_LISTING_WidgetCode(clientData: ClientData): string {
   const { preferences } = clientData;
+  const iframeUrl = preferences.devMode ? "http://localhost:3000/listings" : "https://beyondbooking.vercel.app/listings";
 
   return `
 <!DOCTYPE html>
@@ -52,7 +53,8 @@ export function ALL_LISTING_WidgetCode(clientData: ClientData): string {
         "https://editor.wix.com",
         "https://beyondbooking.wixstudio.com",
         "${preferences.wixCmsUrl}",
-      ];
+        "${preferences.productionUrl}",
+      ].filter(url => url && url.trim() !== "");
 
       window.addEventListener("message", (event) => {
         if (!allowedOrigins.includes(event.origin)) {
@@ -193,7 +195,7 @@ export function ALL_LISTING_WidgetCode(clientData: ClientData): string {
   <body>
     <iframe
       id="searchWidget"
-      src="https://beyondbooking.vercel.app/listings"
+      src="${iframeUrl}"
       scrolling="yes"
     ></iframe>
   </body>
@@ -203,6 +205,7 @@ export function ALL_LISTING_WidgetCode(clientData: ClientData): string {
 
 export function SINGLE_LISTING_WidgetCode(clientData: ClientData): string {
   const { preferences } = clientData;
+  const iframeUrl = preferences.devMode ? "http://localhost:3000/listings" : "https://beyondbooking.vercel.app/listings";
   // const { primaryColor, secondaryColor, customDomain } = clientData.preferences;
 
   return `<!DOCTYPE html>
@@ -218,7 +221,8 @@ export function SINGLE_LISTING_WidgetCode(clientData: ClientData): string {
         "https://beyondbooking.wixstudio.com",
         "https://beyondbooking.vercel.app",
         "${preferences.wixCmsUrl}",
-      ];
+        "${preferences.productionUrl}",
+      ].filter(url => url && url.trim() !== "");
 
       let LISTING_ID = ""; // Global variable for listing ID
       let iframeLoaded = false;
@@ -360,7 +364,7 @@ export function SINGLE_LISTING_WidgetCode(clientData: ClientData): string {
     </style>
   </head>
   <body>
-    <iframe id="searchWidget" src="https://beyondbooking.vercel.app/listings"></iframe>
+    <iframe id="searchWidget" src="${iframeUrl}"></iframe>
   </body>
 </html>`.trim();
 }

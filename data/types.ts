@@ -20,10 +20,12 @@ export type ClientPreferences = {
   bookingFooterColor: string
   buttonFontColorOnHover: string
   customDomain: string
+  productionUrl: string
   wixCmsUrl: string
   maxGuests: number
   language: string
   integrationLabel: string
+  devMode: boolean
   todos: Todo[]
 }
 

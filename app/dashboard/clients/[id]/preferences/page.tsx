@@ -3,7 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { ClientPreferencesForm } from "@/components/client-preferences-form";
 import { CodeGenerator } from "@/components/code-generator";
+import { IframePreview } from "@/components/iframe-preview";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClientData, Todo } from "@/data/types";
 
 const defaultTodos: Todo[] = [
@@ -100,6 +104,8 @@ export default function ClientPreferencesPage({ params }: PageProps) {
   const { isLoaded, userId } = useAuth();
   const router = useRouter();
   const [clientData, setClientData] = useState<ClientData | null>(null);
+  const [originalClientData, setOriginalClientData] = useState<ClientData | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -151,6 +157,7 @@ export default function ClientPreferencesPage({ params }: PageProps) {
               bookingFooterColor: preferences.bookingFooterColor || "",
               buttonFontColorOnHover: preferences.buttonFontColorOnHover || "",
               customDomain: preferences.customDomain || "",
+              productionUrl: preferences.productionUrl || "",
               headingFont: preferences.headingFont || "",
               bodyFont: preferences.bodyFont || "",
               fontLink: preferences.fontLink || "",
@@ -161,11 +168,13 @@ export default function ClientPreferencesPage({ params }: PageProps) {
               wixCmsUrl: preferences.wixCmsUrl || "",
               maxGuests: preferences.maxGuests || 0,
               language: preferences.language || "",
+              devMode: Boolean(preferences.devMode),
               todos: Array.isArray(preferences.todos) && preferences.todos.length > 0 ? preferences.todos : defaultTodos,
             },
           };
           
           setClientData(newClientData);
+          setOriginalClientData(JSON.parse(JSON.stringify(newClientData))); // Deep clone for comparison
         } catch (err) {
           console.error("Error fetching data:", err);
           setError(err instanceof Error ? err.message : "An error occurred");
@@ -179,10 +188,41 @@ export default function ClientPreferencesPage({ params }: PageProps) {
     }
   }, [isLoaded, userId, router, params.id, SERVER_URL]);
 
-  // 4) Update local state from child
+  // 4) Update local state from child and track changes
   const handleClientDataChange = (updatedClientData: ClientData) => {
     setClientData(updatedClientData);
+    
+    // Check if there are unsaved changes by comparing with original
+    if (originalClientData) {
+      const hasChanges = JSON.stringify(updatedClientData) !== JSON.stringify(originalClientData);
+      setHasUnsavedChanges(hasChanges);
+    }
   };
+  
+  // Handle save completion
+  const handleSaveComplete = () => {
+    if (clientData) {
+      setOriginalClientData(JSON.parse(JSON.stringify(clientData)));
+      setHasUnsavedChanges(false);
+    }
+  };
+  
+  // Warn when navigating away with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+  
 
   if (!isLoaded || isLoading) {
     return <div>Loading...</div>;
@@ -206,35 +246,89 @@ export default function ClientPreferencesPage({ params }: PageProps) {
       <div className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container flex h-14 max-w-screen-2xl items-center">
           <div className="flex flex-1 items-center justify-between">
-            <h1 className="text-3xl font-bold tracking-tight">
-              Site Preferences
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold tracking-tight">
+                Site Preferences
+              </h1>
+              {hasUnsavedChanges && (
+                <div className="h-2 w-2 bg-amber-500 rounded-full animate-pulse" title="Unsaved changes" />
+              )}
+            </div>
 
-            <Button
-              size="sm"
-              className="ml-auto"
-              onClick={() => {
-                // ⭐ 5) Call child's handleUpdateClientData() via ref
-                formRef.current?.handleUpdateClientData();
-              }}
-            >
-              Save Changes
-            </Button>
+            <div className="flex items-center gap-4">
+              {/* DEV Mode Switch */}
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="dev-mode" className="text-sm font-medium">
+                  DEV
+                </Label>
+                <Switch
+                  id="dev-mode"
+                  checked={clientData?.preferences?.devMode || false}
+                  onCheckedChange={(checked) => {
+                    if (clientData) {
+                      const updatedData = {
+                        ...clientData,
+                        preferences: {
+                          ...clientData.preferences,
+                          devMode: checked,
+                        },
+                      };
+                      handleClientDataChange(updatedData);
+                    }
+                  }}
+                />
+              </div>
+
+              {hasUnsavedChanges && (
+                <span className="text-sm text-amber-500 font-medium">
+                  ● Unsaved changes
+                </span>
+              )}
+              <Button
+                size="sm"
+                className="ml-auto"
+                variant={hasUnsavedChanges ? "default" : "outline"}
+                onClick={async () => {
+                  // ⭐ 5) Call child's handleUpdateClientData() via ref
+                  await formRef.current?.handleUpdateClientData();
+                  handleSaveComplete();
+                }}
+              >
+                {hasUnsavedChanges ? "Save Changes" : "No Changes"}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Page Content */}
       <div className="space-y-6">
-        <div className="grid gap-6 md:grid-cols-2">
-          <ClientPreferencesForm
-            ref={formRef}
-            clientId={params.id}
-            clientData={clientData}
-            handleClientDataChange={handleClientDataChange}
-          />
-          <CodeGenerator clientData={clientData} />
-        </div>
+        <Tabs defaultValue="edit" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="edit">Edit Preferences</TabsTrigger>
+            <TabsTrigger value="code">Generated Code</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="edit" className="mt-6">
+            <div className="space-y-6">
+              <ClientPreferencesForm
+                ref={formRef}
+                clientId={params.id}
+                clientData={clientData}
+                handleClientDataChange={handleClientDataChange}
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="code" className="mt-6">
+            <CodeGenerator clientData={clientData} />
+          </TabsContent>
+          
+          <TabsContent value="preview" className="mt-6">
+            <IframePreview clientData={clientData} />
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );

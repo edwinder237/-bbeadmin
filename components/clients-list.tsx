@@ -12,9 +12,7 @@ import {
   Search,
   Filter,
   MoreHorizontal,
-  Eye,
-  Edit,
-  Activity
+  Edit
 } from "lucide-react"
 import { AddClientModal } from "@/components/add-client-modal"
 import { useReactTable, ColumnDef, getCoreRowModel, flexRender, getSortedRowModel, SortingState, getFilteredRowModel } from '@tanstack/react-table'
@@ -200,14 +198,6 @@ export function ClientsList({ initialClients }: ClientsListProps) {
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Preferences
                 </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Eye className="mr-2 h-4 w-4" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Activity className="mr-2 h-4 w-4" />
-                Check Connection
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
