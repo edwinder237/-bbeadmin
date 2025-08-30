@@ -4,6 +4,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useClients } from "@/lib/contexts/ClientContext"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -39,6 +41,7 @@ export function AddClientModal({ onClientAdded }: AddClientModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedIntegration, setSelectedIntegration] = useState<string>()
   const [open, setOpen] = useState(false)
+  const { refreshClients } = useClients()
 
   const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080'
 
@@ -84,11 +87,12 @@ export function AddClientModal({ onClientAdded }: AddClientModalProps) {
       const newClient = await response.json()
       console.log('Client created:', newClient)
       setOpen(false) // Close modal on success
-      onClientAdded() // Call the callback to refresh the clients list
-      // TODO: Add success toast notification
+      await refreshClients() // Refresh the context data
+      onClientAdded() // Call the callback for any additional actions
+      toast.success('Client created successfully!')
     } catch (error) {
       console.error('Error creating client:', error)
-      // TODO: Add error toast notification
+      toast.error('Failed to create client. Please try again.')
     } finally {
       setIsLoading(false)
     }

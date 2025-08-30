@@ -314,8 +314,10 @@ export function SINGLE_LISTING_WidgetCode(clientData: ClientData): string {
         const iframe = document.getElementById("searchWidget");
         const message = {
           locationFilter: LOCATION_FILTER,
-          ACCESS_KEY: "60ec32ed-8a2c-4a9b-aae4-799793a2e237",
-          INTEGRATION_TYPE: "lodgify",
+          ACCESS_KEY: "${clientData.accessKey}",
+          INTEGRATION_TYPE: "${preferences.integrationLabel}",
+          LODGIFY_WS_URL,
+          LODGIFY_WS_ID,
           HEADING_FONT,
           BODY_FONT,
           HERO_IMG,

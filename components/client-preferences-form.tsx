@@ -169,6 +169,7 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
           clientData?.preferences?.buttonFontColorOnHover || "0,0,0",
         customDomain: clientData?.preferences?.customDomain || "",
         productionUrl: clientData?.preferences?.productionUrl || "",
+        channelManagerSiteUrl: clientData?.preferences?.channelManagerSiteUrl || "",
         headingFont: clientData?.preferences?.headingFont || "",
         bodyFont: clientData?.preferences?.bodyFont || "",
         fontLink: clientData?.preferences?.fontLink || "",
@@ -743,6 +744,18 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
                   value={prefs.productionUrl}
                   onChange={handlePreferenceChange}
                   placeholder="https://yourdomain.com"
+                />
+              </div>
+
+              {/* Channel Manager Site URL */}
+              <div className="space-y-2">
+                <Label htmlFor="channelManagerSiteUrl">Channel Manager Site Url</Label>
+                <Input
+                  id="channelManagerSiteUrl"
+                  name="channelManagerSiteUrl"
+                  value={prefs.channelManagerSiteUrl}
+                  onChange={handlePreferenceChange}
+                  placeholder="https://yourchannelmanager.com"
                 />
               </div>
 

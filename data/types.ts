@@ -21,6 +21,7 @@ export type ClientPreferences = {
   buttonFontColorOnHover: string
   customDomain: string
   productionUrl: string
+  channelManagerSiteUrl: string
   wixCmsUrl: string
   maxGuests: number
   language: string

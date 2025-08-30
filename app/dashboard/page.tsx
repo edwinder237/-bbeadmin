@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
+import { useClients } from "@/lib/contexts/ClientContext";
+import { DashboardSkeleton } from "@/components/loading-skeleton";
 import { 
   Users, 
   UserPlus, 
@@ -19,61 +21,52 @@ import {
   Zap
 } from "lucide-react";
 
-interface DashboardStats {
-  totalClients: number;
-  activeClients: number;
-  pendingClients: number;
-  developmentClients: number;
-  inactiveClients: number;
-  recentActivity: Array<{
-    id: string;
-    action: string;
-    client: string;
-    timestamp: string;
-  }>;
-}
 
 export default function DashboardPage() {
   const { isLoaded, userId } = useAuth();
   const router = useRouter();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalClients: 0,
-    activeClients: 0,
-    pendingClients: 0,
-    developmentClients: 0,
-    inactiveClients: 0,
-    recentActivity: []
-  });
+  const { stats, clients, isLoading } = useClients();
+
 
   useEffect(() => {
     if (isLoaded && !userId) {
       router.push('/sign-in');
-      return;
-    }
-
-    if (isLoaded && userId) {
-      // Mock data for now - in real app, fetch from API
-      setStats({
-        totalClients: 24,
-        activeClients: 8,
-        pendingClients: 5,
-        developmentClients: 7,
-        inactiveClients: 4,
-        recentActivity: [
-          { id: "1", action: "Client created", client: "Sunset Villa", timestamp: "2 hours ago" },
-          { id: "2", action: "Status updated", client: "Beach Resort", timestamp: "4 hours ago" },
-          { id: "3", action: "Preferences saved", client: "Mountain Lodge", timestamp: "1 day ago" },
-        ]
-      });
     }
   }, [isLoaded, userId, router]);
 
+  // Get recent activity from actual client data
+  const recentActivity = clients
+    .sort((a, b) => new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime())
+    .slice(0, 5)
+    .map(client => ({
+      id: client.id,
+      action: client.status === "Active" ? "Client activated" : "Status updated",
+      client: client.name,
+      timestamp: formatRelativeTime(client.lastActive)
+    }));
+
+  function formatRelativeTime(dateString: string) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    
+    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return 'Recently';
+  }
+
   if (!isLoaded) {
-    return <div>Loading...</div>;
+    return <DashboardSkeleton />;
   }
 
   if (!userId) {
     return null;
+  }
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -211,7 +204,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.recentActivity.map((activity) => (
+              {recentActivity.map((activity) => (
                 <div key={activity.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
                   <div className="flex-1 space-y-1">

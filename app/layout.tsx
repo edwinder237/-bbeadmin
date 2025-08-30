@@ -1,24 +1,23 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import ClientProvider from "./client-provider";
 import { Toaster } from "@/components/ui/sonner"
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: "BBE Admin Tool",
   description: "Admin Tool for BBE",
+  icons: {
+    icon: '/icon',
+    apple: '/icon',
+  },
 };
 
 export default function RootLayout({
@@ -29,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.className} antialiased`}
       >
         {/* 
           1) The server layout sets the metadata.

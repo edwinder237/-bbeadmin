@@ -3,8 +3,7 @@ import {
   Users, 
   UserCheck, 
   Clock, 
-  Building, 
-  AlertCircle
+  Building
 } from "lucide-react"
 
 type ClientStats = {
@@ -43,15 +42,6 @@ export function ClientStats({ stats }: { stats: ClientStats }) {
       color: "text-orange-600",
       bgColor: "bg-orange-50",
       progressColor: "bg-orange-500"
-    },
-    {
-      label: "Inactive",
-      value: stats.inactiveClients,
-      percentage: (stats.inactiveClients / stats.totalClients) * 100,
-      icon: AlertCircle,
-      color: "text-gray-600",
-      bgColor: "bg-gray-50",
-      progressColor: "bg-gray-500"
     }
   ];
 
@@ -64,7 +54,7 @@ export function ClientStats({ stats }: { stats: ClientStats }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 grid-cols-3">
             {statusData.map((status) => (
               <div key={status.label} className="space-y-3">
                 <div className="flex items-center justify-between">

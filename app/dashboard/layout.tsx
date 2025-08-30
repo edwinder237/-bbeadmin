@@ -9,15 +9,15 @@ import {
   LayoutDashboard, 
   Users, 
   Settings, 
-  BarChart, 
-  Building2,
-  Bell,
-  Search
+  BarChart
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ThemeProvider } from "@/components/theme-provider";
 import { UserButton } from "@clerk/nextjs";
-import { Input } from "@/components/ui/input";
+import { ClientProvider } from "@/lib/contexts/ClientContext";
+import { ClientPreferencesProvider } from "@/lib/contexts/ClientPreferencesContext";
+import { Toaster } from "sonner";
+import { Logo } from "@/components/logo";
 
 const navigation = [
   {
@@ -47,16 +47,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <div className="min-h-screen bg-background">
+      <ClientProvider>
+        <ClientPreferencesProvider>
+          <div className="min-h-screen bg-background">
         {/* Header */}
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="w-full px-6 lg:px-8 flex h-16 items-center justify-between">
             {/* Logo and Brand */}
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                  <Building2 className="h-4 w-4 text-white" />
-                </div>
+                <Logo />
                 <div>
                   <h1 className="text-lg font-bold text-foreground">BBE Admin</h1>
                   <p className="text-xs text-muted-foreground">Client Management</p>
@@ -90,23 +90,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </nav>
             </div>
 
-            {/* Search Bar */}
-            <div className="hidden lg:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search clients, settings..."
-                  className="pl-10 bg-muted/50 border-0 focus-visible:bg-background"
-                />
-              </div>
-            </div>
-
             {/* Right side actions */}
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-              </Button>
               <ThemeToggle />
               <UserButton 
                 afterSignOutUrl="/"
@@ -153,6 +138,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </main>
       </div>
+      <Toaster position="top-right" />
+        </ClientPreferencesProvider>
+      </ClientProvider>
     </ThemeProvider>
   );
 }

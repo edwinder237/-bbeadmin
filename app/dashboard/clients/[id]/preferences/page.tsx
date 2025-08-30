@@ -8,72 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClientData, Todo } from "@/data/types";
-
-const defaultTodos: Todo[] = [
-  {
-    id: "default-1",
-    text: "Client Colors and Font set",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "default-2", 
-    text: "Max guests set",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "default-3",
-    text: "Image uploaded to blob server",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "default-4",
-    text: "All listings wix page completed",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "default-5",
-    text: "Dynamic pages completed",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "default-6",
-    text: "Search bar connected",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "default-7",
-    text: "Target domain set to iframe code",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "default-8",
-    text: "Page size set for all listing and single page",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "default-9",
-    text: "Headers size checked",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "default-10",
-    text: "Mobile size check",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-];
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { useClientPreferences } from "@/lib/contexts/ClientPreferencesContext";
+import { DashboardSkeleton } from "@/components/loading-skeleton";
+import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 interface PageProps {
   params: {
@@ -85,34 +26,21 @@ interface FormRefType {
   handleUpdateClientData: () => Promise<void>;
 }
 
-// Helper to get integration label
-function getIntegrationLabel(integrationId?: string): string {
-  const idString = integrationId == null ? "" : integrationId.toString();
-  switch (idString) {
-    case "1":
-      return "guesty";
-    case "2":
-      return "lodgify";
-    case "3":
-      return "hostaway";
-    default:
-      return "";
-  }
-}
-
 export default function ClientPreferencesPage({ params }: PageProps) {
   const { isLoaded, userId } = useAuth();
   const router = useRouter();
-  const [clientData, setClientData] = useState<ClientData | null>(null);
-  const [originalClientData, setOriginalClientData] = useState<ClientData | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    clientData,
+    hasUnsavedChanges,
+    isLoading,
+    error,
+    fetchClientPreferences,
+    updateClientData,
+    handleSaveComplete,
+    refreshPreferences,
+  } = useClientPreferences();
 
-  // ⭐ 1) Create a ref to access child's handleUpdateClientData
   const formRef = useRef<FormRefType>(null);
-
-  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:8080';
 
   useEffect(() => {
     if (isLoaded && !userId) {
@@ -121,92 +49,10 @@ export default function ClientPreferencesPage({ params }: PageProps) {
     }
 
     if (isLoaded && userId) {
-      // 3) Fetch client data
-      const fetchClientPreferences = async () => {
-        try {
-          setIsLoading(true);
-          setError(null);
-
-          const response = await fetch(
-            `${SERVER_URL}/api/getAdminData?clientCuid=${params.id}`
-          );
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          const { preferences } = data;
-
-          // Build initial clientData
-          const newClientData: ClientData = {
-            status: data.status,
-            accessKey: data.cuid,
-            name: data.name,
-            email: data.email || "",
-            ApiKey: data.ApiKey || "",
-            integrationId: data.integrationId,
-            clientSecret: data.clientSecret || "",
-            clientID: data.clientID || "",
-            preferences: {
-              integrationLabel: getIntegrationLabel(data.integrationId) || "",
-              locationFilter: Boolean(preferences.locationFilter),
-              lodgifyWsUrl: preferences.lodgifyWsUrl || "",
-              lodgifyWsId: preferences.lodgifyWsId || "",
-              primaryColor: preferences.primaryColor || "",
-              secondaryColor: preferences.secondaryColor || "",
-              bookingFooterColor: preferences.bookingFooterColor || "",
-              buttonFontColorOnHover: preferences.buttonFontColorOnHover || "",
-              customDomain: preferences.customDomain || "",
-              productionUrl: preferences.productionUrl || "",
-              headingFont: preferences.headingFont || "",
-              bodyFont: preferences.bodyFont || "",
-              fontLink: preferences.fontLink || "",
-              currencies: Array.isArray(preferences.currencies)
-                ? preferences.currencies
-                : [],
-              imgLink: preferences.imgLink || "",
-              wixCmsUrl: preferences.wixCmsUrl || "",
-              maxGuests: preferences.maxGuests || 0,
-              language: preferences.language || "",
-              devMode: Boolean(preferences.devMode),
-              todos: Array.isArray(preferences.todos) && preferences.todos.length > 0 ? preferences.todos : defaultTodos,
-            },
-          };
-          
-          setClientData(newClientData);
-          setOriginalClientData(JSON.parse(JSON.stringify(newClientData))); // Deep clone for comparison
-        } catch (err) {
-          console.error("Error fetching data:", err);
-          setError(err instanceof Error ? err.message : "An error occurred");
-          setClientData(null);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      fetchClientPreferences();
+      fetchClientPreferences(params.id);
     }
-  }, [isLoaded, userId, router, params.id, SERVER_URL]);
+  }, [isLoaded, userId, router, params.id, fetchClientPreferences]);
 
-  // 4) Update local state from child and track changes
-  const handleClientDataChange = (updatedClientData: ClientData) => {
-    setClientData(updatedClientData);
-    
-    // Check if there are unsaved changes by comparing with original
-    if (originalClientData) {
-      const hasChanges = JSON.stringify(updatedClientData) !== JSON.stringify(originalClientData);
-      setHasUnsavedChanges(hasChanges);
-    }
-  };
-  
-  // Handle save completion
-  const handleSaveComplete = () => {
-    if (clientData) {
-      setOriginalClientData(JSON.parse(JSON.stringify(clientData)));
-      setHasUnsavedChanges(false);
-    }
-  };
-  
   // Warn when navigating away with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -222,22 +68,76 @@ export default function ClientPreferencesPage({ params }: PageProps) {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [hasUnsavedChanges]);
-  
+
+  // Update document title with client name
+  useEffect(() => {
+    if (clientData?.name) {
+      document.title = `${clientData.name} - Site Preferences - BBE Admin`;
+    } else {
+      document.title = "Site Preferences - BBE Admin";
+    }
+    
+    // Cleanup: reset title when component unmounts
+    return () => {
+      document.title = "BBE Admin Tool";
+    };
+  }, [clientData?.name]);
+
+  const handleRefresh = async () => {
+    try {
+      await refreshPreferences(params.id);
+      toast.success('Preferences refreshed successfully');
+    } catch (error) {
+      toast.error('Failed to refresh preferences');
+    }
+  };
 
   if (!isLoaded || isLoading) {
-    return <div>Loading...</div>;
+    return <DashboardSkeleton />;
   }
 
   if (!userId) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-destructive">Error Loading Preferences</h2>
+          <p className="text-muted-foreground mt-2">{error}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleRefresh} variant="outline">
+            Try Again
+          </Button>
+          <Button onClick={() => router.back()} variant="secondary">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (!clientData) {
-    return <div>No client data found</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold">No Client Data Found</h2>
+          <p className="text-muted-foreground mt-2">
+            The client preferences could not be loaded.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleRefresh} variant="outline">
+            Refresh
+          </Button>
+          <Button onClick={() => router.back()} variant="secondary">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -247,6 +147,17 @@ export default function ClientPreferencesPage({ params }: PageProps) {
         <div className="container flex h-14 max-w-screen-2xl items-center">
           <div className="flex flex-1 items-center justify-between">
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 mr-2"
+                asChild
+              >
+                <Link href="/dashboard/clients">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="sr-only">Back to Clients</span>
+                </Link>
+              </Button>
               <h1 className="text-3xl font-bold tracking-tight">
                 Site Preferences
               </h1>
@@ -273,11 +184,21 @@ export default function ClientPreferencesPage({ params }: PageProps) {
                           devMode: checked,
                         },
                       };
-                      handleClientDataChange(updatedData);
+                      updateClientData(updatedData);
                     }
                   }}
                 />
               </div>
+
+              {/* Refresh Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRefresh}
+                title="Refresh preferences"
+              >
+                Refresh
+              </Button>
 
               {hasUnsavedChanges && (
                 <span className="text-sm text-amber-500 font-medium">
@@ -289,9 +210,13 @@ export default function ClientPreferencesPage({ params }: PageProps) {
                 className="ml-auto"
                 variant={hasUnsavedChanges ? "default" : "outline"}
                 onClick={async () => {
-                  // ⭐ 5) Call child's handleUpdateClientData() via ref
-                  await formRef.current?.handleUpdateClientData();
-                  handleSaveComplete();
+                  try {
+                    await formRef.current?.handleUpdateClientData();
+                    handleSaveComplete();
+                    toast.success('Preferences saved successfully');
+                  } catch (error) {
+                    toast.error('Failed to save preferences');
+                  }
                 }}
               >
                 {hasUnsavedChanges ? "Save Changes" : "No Changes"}
@@ -316,7 +241,7 @@ export default function ClientPreferencesPage({ params }: PageProps) {
                 ref={formRef}
                 clientId={params.id}
                 clientData={clientData}
-                handleClientDataChange={handleClientDataChange}
+                handleClientDataChange={updateClientData}
               />
             </div>
           </TabsContent>
