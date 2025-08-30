@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ClientPreferencesForm } from "@/components/client-preferences-form";
 import { CodeGenerator } from "@/components/code-generator";
 import { IframePreview } from "@/components/iframe-preview";
@@ -87,7 +87,7 @@ export default function ClientPreferencesPage({ params }: PageProps) {
     try {
       await refreshPreferences(params.id);
       toast.success('Preferences refreshed successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to refresh preferences');
     }
   };
@@ -214,7 +214,7 @@ export default function ClientPreferencesPage({ params }: PageProps) {
                     await formRef.current?.handleUpdateClientData();
                     handleSaveComplete();
                     toast.success('Preferences saved successfully');
-                  } catch (error) {
+                  } catch {
                     toast.error('Failed to save preferences');
                   }
                 }}

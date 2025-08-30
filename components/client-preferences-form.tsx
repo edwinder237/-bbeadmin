@@ -661,6 +661,7 @@ export const ClientPreferencesForm = forwardRef<FormRefType, ClientPreferencesFo
                 </div>
                 {prefs.imgLink && (
                   <div className="mt-2 relative inline-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={prefs.imgLink} 
                       alt="Preview" 

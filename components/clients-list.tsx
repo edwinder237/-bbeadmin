@@ -95,7 +95,7 @@ export function ClientsList({ initialClients }: ClientsListProps) {
         });
         clearTimeout(timeoutId);
         setSiteStatus(prev => ({ ...prev, [clientId]: 'online' }));
-      } catch (fetchError) {
+      } catch {
         clearTimeout(timeoutId);
         
         // Method 2: Try loading an image as fallback
@@ -117,7 +117,7 @@ export function ClientsList({ initialClients }: ClientsListProps) {
         img.src = `${url}/favicon.ico?t=${Date.now()}`;
       }
       
-    } catch (error) {
+    } catch {
       setSiteStatus(prev => ({ ...prev, [clientId]: 'offline' }));
     }
   }, []);

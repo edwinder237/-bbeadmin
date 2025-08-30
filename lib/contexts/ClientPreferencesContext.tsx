@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { ClientData, Todo } from "@/data/types";
 
@@ -106,14 +106,14 @@ export function ClientPreferencesProvider({ children }: { children: React.ReactN
   const [error, setError] = useState<string | null>(null);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
   const [cachedClientId, setCachedClientId] = useState<string | null>(null);
-  const { isLoaded, userId } = useAuth();
+  const { } = useAuth();
 
-  const transformClientPreferencesData = useCallback((data: any): ClientData => {
+  const transformClientPreferencesData = useCallback((data: ClientData & { preferences?: Record<string, unknown>; ApiKey?: string; cuid?: string; integrationId?: string }): ClientData => {
     const { preferences } = data;
 
     return {
       status: data.status,
-      accessKey: data.cuid,
+      accessKey: data.cuid || "",
       name: data.name,
       email: data.email || "",
       ApiKey: data.ApiKey || "",

@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { ClientData as FullClientData } from '@/data/types';
 
 interface ClientData {
   id: number;
@@ -77,7 +76,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         lastActive: new Date(client.updatedAt).toISOString().split("T")[0],
         status: mappedStatus,
         integrationType: integrationType,
-        productionUrl: (client as any).preferences?.productionUrl || "",
+        productionUrl: (client as ClientData & { preferences?: { productionUrl?: string } }).preferences?.productionUrl || "",
         client: client,
         cuid: client.cuid || client.id.toString(),
       };
